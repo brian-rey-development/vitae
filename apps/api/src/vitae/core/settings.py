@@ -1,5 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,8 +13,18 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Vitae"
-    environment: str = "development"
+    environment: Literal["development", "staging", "production"] = "development"
     debug: bool = False
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment == "production"
+
+    @model_validator(mode="after")
+    def no_debug_in_prod(self) -> "Settings":
+        if self.is_production and self.debug:
+            raise ValueError("debug must be False in production")
+        return self
 
 
 @lru_cache
