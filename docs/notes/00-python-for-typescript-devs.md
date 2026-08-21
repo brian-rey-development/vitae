@@ -49,8 +49,26 @@ happen to be importable because of the current working directory. It prevents a 
 when I run it this way, breaks in CI" bugs. Think of it as making the package a real, installed
 artifact rather than a pile of scripts.
 
-## My own words (fill this in)
+## My own words
 
-- A venv is ...
-- Type hints are not enforced at runtime because ...
-- The thing that surprised me most coming from TypeScript was ...
+- **A venv is** a per-project sandbox with its own `site-packages/`, so each project's dependencies
+  stay isolated and never collide. That is the one job a venv does: isolation. Python needed a
+  dedicated mechanism for it because its import system is global (a shared `site-packages` on
+  `sys.path`), whereas Node gets isolation structurally, resolving imports locally by walking up to
+  `node_modules`. The other things I care about are separate mechanisms layered on top: the lockfile
+  (`uv.lock`) is what makes installs identical across machines and deploys, and uv is what pins the
+  Python version itself. Together they give reproducibility; the venv alone only gives isolation.
+
+- **Type hints are not enforced at runtime because** Python is dynamically typed by deliberate
+  design: the interpreter runs on duck typing, caring what an object can do at the moment of use,
+  not what type it was declared. Enforcing declarations would break that model and tax a language
+  whose point is flexibility, so hints were added as optional, ignorable metadata (gradual typing),
+  stored on the function in `__annotations__`. Enforcement is opt-in through external tools that
+  read those same annotations: `ty` statically before running (like `tsc`, but analysis only, no
+  compiled artifact), and Pydantic at runtime to validate real data at untrusted boundaries (like
+  `zod`). Same annotations, two consumers, two moments in time.
+
+- **The thing that surprised me most coming from TypeScript was** that Python types are advisory,
+  not the law. In TS the compiler blocks bad code before it runs; in Python you bolt on the
+  enforcement yourself with ty and Pydantic. That inversion is the whole thesis of this project:
+  every boundary in an AI app is a place where advisory hints must be turned into real validation.

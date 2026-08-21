@@ -174,8 +174,8 @@ Deliverables:
 - `docs/notes/00-python-for-typescript-devs.md` read and extended with your own words.
 
 Definition of Done:
-- [ ] `uv --version` works.
-- [ ] You can explain, in the notes file, what a venv is and why type hints are not enforced by
+- [x] `uv --version` works.
+- [x] You can explain, in the notes file, what a venv is and why type hints are not enforced by
       the Python runtime.
 
 ### M1 - Production skeleton
@@ -193,10 +193,10 @@ Deliverables:
 - `.env` + committed `.env.example` for configuration (no secrets committed).
 
 Definition of Done:
-- [ ] `uv run fastapi dev apps/api/src/vitae/main.py` serves `GET /health -> {"status": "ok"}`.
-- [ ] `/docs` renders the endpoint.
-- [ ] `uv run ruff check` and `uv run ty check` pass clean.
-- [ ] ADR-0001 (uv), ADR-0002 (domain-first), ADR-0003 (monorepo) reviewed and accurate.
+- [x] `uv run fastapi dev apps/api/src/vitae/main.py` serves `GET /health -> {"status": "ok"}`.
+- [x] `/docs` renders the endpoint.
+- [x] `uv run ruff check` and `uv run ty check` pass clean.
+- [x] ADR-0001 (uv), ADR-0002 (domain-first), ADR-0003 (monorepo) reviewed and accurate.
 
 ### M2 - Choose and integrate the datastore
 Goal: decide how Vitae persists data, then wire that store with correct lifecycle and DI.
@@ -541,6 +541,13 @@ A milestone is not done until all of these hold. This is what makes it senior-le
 Append one line per working session. Newest at the bottom.
 
 - 2026-08-21 - Plan authored. Milestones M0-M12 defined, ADR and notes scaffolding created.
+- 2026-08-21 - M0 done. Toolchain verified (uv 0.12.2). Note 00 completed in own words (venv
+  isolation vs lockfile/uv reproducibility; type hints as advisory gradual-typing metadata).
+  README.md and root CLAUDE.md written.
 - 2026-08-21 - Scope expanded: in-depth extraction, external knowledge (M9), pipelines phase
   (M12-M13), and a Next.js frontend phase (M14-M16). Repo is now a monorepo (ADR-0003). Milestones
   renumbered to M0-M18 across five phases.
+- 2026-08-21 - M1 done. Scaffolded apps/api (uv, Python 3.13, src/vitae layout). App factory
+  (create_app), pydantic-settings, domain-first health slice. GET /health -> {"status":"ok"},
+  /docs renders, ruff + ty clean. Note 01 written. Pending manual step: create apps/api/.env and
+  .env.example (tool-blocked from writing .env paths).
