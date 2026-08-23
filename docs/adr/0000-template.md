@@ -5,20 +5,16 @@
 
 ## Context
 
-What is the problem or force that requires a decision? What constraints are in play (technical,
-product, learning goals)? State the facts, not the choice yet. A reader should feel the tension
-that makes this a real decision and not an obvious one.
+What problem or constraint forces a choice? Technical limits, product needs, learning goals. Stick to the facts. Do not state the choice yet.
 
 ## Decision
 
-The choice we are making, stated plainly in one or two sentences. Active voice. "We will ...".
+The choice in one or two sentences. Use active voice. Start with "We will".
 
 ## Consequences
 
-What becomes easier, and what becomes harder or riskier as a result. Include the costs we are
-knowingly accepting. Honest tradeoffs, not just benefits.
+What gets easier, and what gets harder or riskier. Name the costs we are taking on.
 
 ## Alternatives considered
 
-Each realistic option we rejected, with the one-line reason it lost. This is the most valuable
-part for a future reader deciding whether to revisit the decision.
+Each realistic option we rejected, and why it lost. A future reader uses this when they want to reopen the decision.

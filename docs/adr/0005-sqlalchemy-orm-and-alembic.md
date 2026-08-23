@@ -5,51 +5,34 @@
 
 ## Context
 
-ADR-0004 chose PostgreSQL. We now need two related decisions before the first table lands:
+ADR-0004 picked PostgreSQL. Before the first table lands we still have to choose how the schema shows up in code, and how it changes over time.
 
-1. How the schema is expressed in code (persistence style).
-2. How the schema evolves over time (migrations).
-
-The project's principles pull in a clear direction: types are the design, we validate at
-boundaries and trust the typed core, and storage stays behind a repository interface so it can be
-swapped. Whatever we pick has to keep the storage model separate from the API request/response
-model and must produce reversible, reviewable schema changes, not implicit auto-creation.
+Storage stays behind a repository so it can be swapped. The storage model and the API request/response model stay separate. Schema changes should be reversible and reviewable, not created implicitly at startup.
 
 ## Decision
 
-Use SQLAlchemy 2.0 in its modern typed style (`DeclarativeBase`, `Mapped`, `mapped_column`) as the
-persistence layer, async throughout (the async engine and `AsyncSession` from ADR-0004). ORM models
-live in each domain's `models.py` and are reached only through a per-domain repository class, never
-imported by routers or services directly.
+We will use SQLAlchemy 2.0 in its typed style (`DeclarativeBase`, `Mapped`, `mapped_column`) as the persistence layer, async all the way (async engine and `AsyncSession`). ORM models live in each domain's `models.py` and are reached only through that domain's repository. Routers and services do not import them.
 
-Use Alembic for migrations. Schema changes are generated with `alembic revision --autogenerate`,
-reviewed by eye, and applied with `alembic upgrade`. Autogenerate is a draft the human edits, not a
-command we trust blindly. Every migration has a working `downgrade`.
+We will use Alembic for migrations. `alembic revision --autogenerate` drafts a revision. A human reads it, edits it, then `alembic upgrade` applies it. Autogenerate is a draft. Every migration has a working `downgrade`.
 
-The ORM model is the storage shape only. The API shape is a separate Pydantic model in each domain's
-`schemas.py`; the repository maps between them.
+The ORM model is the storage shape. The API shape is a Pydantic model in `schemas.py`. The repository maps between them.
 
 ## Consequences
 
-- The typed model is a single source of truth that both `ty` checks statically and Alembic diffs to
-  generate migrations, so the schema in code and the schema in the database stay in step.
-- Repositories keep SQLAlchemy out of the domain surface: a router depends on a repository, not on a
-  `Session` full of ORM internals, which preserves the vertical-slice boundary.
-- Async Alembic needs its `env.py` wired to run migrations through the async engine. This is a
-  one-time setup cost we pay now.
-- Autogenerate does not catch everything (server defaults, some type changes, data migrations), so
-  every generated migration is read and corrected before it is committed.
+`ty` type-checks the same models Alembic diffs for migrations, so the code schema and the database schema stay aligned.
+
+Routers depend on a repository, not on a `Session`. SQLAlchemy stays out of the HTTP layer.
+
+Alembic's `env.py` has to run through the async engine. That is a one-time wiring job.
+
+Autogenerate misses things (server defaults, some type changes, data migrations). Every generated file gets read and fixed before it is committed.
 
 ## Alternatives considered
 
-- Raw SQL over asyncpg (hand-written queries, hand-maintained DDL). Rejected: throws away static
-  typing on the data layer and makes us the migration tool. It buys control we do not need yet and
-  costs the type-driven safety the project is built on.
-- SQLModel (one class for table and API). Rejected: it deliberately merges the storage model and the
-  API model, which is the exact split this project requires (never leak internals). It is also
-  thinner and less mature than SQLAlchemy underneath, which it wraps anyway.
-- SQLAlchemy Core without the ORM. Rejected: more boilerplate to map rows to objects by hand, for no
-  gain over the typed ORM at this scale.
-- Migration tools other than Alembic (yoyo, sqitch, hand-run SQL files). Rejected: none integrate
-  with SQLAlchemy model metadata, so we would lose autogenerate and maintain schema drift by hand.
-  Alembic is the native, reversible choice for a SQLAlchemy project.
+Raw SQL over asyncpg means hand-written queries and hand-maintained DDL. We lose static typing on the data layer and become the migration tool. Extra control we do not need yet.
+
+SQLModel uses one class for the table and the API. That merges the two models we want kept apart, and it is a thinner wrap around SQLAlchemy anyway.
+
+SQLAlchemy Core without the ORM means mapping rows to objects by hand. More boilerplate, no win at this scale.
+
+yoyo, sqitch, or hand-run SQL files do not hook into SQLAlchemy model metadata. We would lose autogenerate and keep schema in two places. Alembic is the tool that ships with this stack.
