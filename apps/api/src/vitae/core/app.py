@@ -8,6 +8,8 @@ from vitae.core.settings import Settings, get_settings
 OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and readiness probes."},
     {"name": "meta", "description": "Application metadata."},
+    {"name": "users", "description": "The current user and their profile."},
+    {"name": "conversations", "description": "Conversations and their messages."},
 ]
 
 

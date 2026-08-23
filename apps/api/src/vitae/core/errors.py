@@ -18,8 +18,6 @@ class ErrorResponse(BaseModel):
 
 
 class AppError(Exception):
-    """Base for expected, domain-level failures the API raises deliberately."""
-
     status_code: int = 500
     code: str = "internal_error"
 
@@ -31,11 +29,6 @@ class AppError(Exception):
 class NotFoundError(AppError):
     status_code = 404
     code = "not_found"
-
-
-class ConflictError(AppError):
-    status_code = 409
-    code = "conflict"
 
 
 def _envelope(code: str, message: str) -> dict[str, object]:

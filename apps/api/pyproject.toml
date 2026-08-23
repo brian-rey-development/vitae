@@ -8,8 +8,11 @@ authors = [
     { name = "brian-rey-development", email = "brianrey3@gmail.com" }
 ]
 dependencies = [
+    "alembic>=1.19.1",
+    "asyncpg>=0.31.0",
     "fastapi[standard]>=0.141.1",
     "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.0",
 ]
 
 [build-system]
@@ -26,6 +29,7 @@ dev = [
 target-version = "py313"
 line-length = 100
 src = ["src"]
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = [

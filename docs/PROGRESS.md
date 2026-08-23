@@ -145,7 +145,7 @@ To be decided in-milestone (each gets an ADR after weighing alternatives):
 | Concern                    | Decide in | Alternatives we will actually compare                             |
 |----------------------------|-----------|-------------------------------------------------------------------|
 | Datastore                  | M2        | Relational vs document, managed vs self-hosted, and which engine. |
-| Persistence style          | M3        | ORM vs query builder vs raw SQL, and which migration tool.        |
+| Persistence style          | M3        | Decided in ADR-0005: SQLAlchemy 2.0 async ORM + Alembic.          |
 | LLM provider               | M5        | Which provider and SDK, and how we isolate it behind an interface.|
 | Similarity / vectors       | M7        | In-database vectors vs a dedicated vector DB vs a library.        |
 | External data sources      | M9        | Which sources, how fetched, and how they are cited and isolated.  |
@@ -221,27 +221,36 @@ Definition of Done:
 - [ ] `/health/ready` returns ok only when the store responds, and 503 when it is down (test both).
 - [ ] Connections/sessions are acquired and released per request, verified by a test.
 
-### M3 - First domain model and schema migrations
-Goal: the `CheckIn` entity, persisted, with versioned schema changes and a clean repository.
+### M3 - First domain models and schema migrations
+Goal: the conversation core (user, profile, conversation, message), persisted, with versioned
+schema changes and clean repositories. Vitae is a conversational agent, so the domain's primitive
+is the user and their conversation, not the check-in. A check-in is a structured artifact extracted
+from a message, so it is deferred to the extraction milestone (M6) and is not modeled here.
 
 Decision first: how do we define the schema and evolve it over time (ORM vs query builder vs raw
-SQL, and which migration tool). We compare the options for our store, write the ADR, then build.
+SQL, and which migration tool). Captured in ADR-0005: SQLAlchemy 2.0 async ORM + Alembic.
 
-Concepts: modeling an entity, the repository pattern (separating persistence from business logic),
-UUIDs and timestamps, versioned and reversible migrations reviewed by eye, and the crucial
-distinction between the storage model and the API request/response model (never leak internals).
+Concepts: modeling entities and their relationships (1:1 profile, 1:N conversations, 1:N messages),
+the repository pattern (separating persistence from business logic), UUIDs and timestamps, storing
+`date_of_birth` not derived `age`, versioned and reversible migrations reviewed by eye, and the
+crucial distinction between the storage model and the API request/response model (never leak
+internals). A placeholder `current_user` seam stands in until real auth (M18).
 
 Deliverables:
-- ADR for the persistence and migration approach.
-- `checkins/models.py` (storage model), `checkins/schemas.py` (Pydantic in/out),
-  `checkins/repository.py`.
-- The first migration that creates the `checkins` table, created and applied.
-- `checkins/router.py`: create and list check-ins (CRUD subset).
+- ADR-0005 for the persistence and migration approach.
+- `core/db.py`: declarative `Base` and shared mixins (UUID primary key, timestamps).
+- `users/` (User + Profile) and `conversations/` (Conversation + Message) domains, each with
+  `models.py`, `schemas.py`, `repository.py`, `router.py`.
+- The first Alembic migration that creates the tables, created and applied. The dev user is seeded
+  by a separate, production-guarded script (`uv run python -m vitae.seed`), not by a migration:
+  migrations run in every environment and must stay schema-only, while dev fixtures are
+  environment-specific and re-runnable.
 
 Definition of Done:
-- [ ] Applying migrations from empty creates the table on a fresh store.
-- [ ] `POST /checkins` persists a row and returns the created resource (typed, no internal leak).
-- [ ] `GET /checkins` returns the user's check-ins.
+- [ ] Applying migrations from empty creates the tables on a fresh store.
+- [ ] `POST /conversations` and `POST /conversations/{id}/messages` persist rows and return the
+      created resource (typed, no internal leak).
+- [ ] `GET /conversations` and `GET /conversations/{id}/messages` return the user's data.
 - [ ] The migration is reversible and was reviewed by eye, not accepted blindly.
 
 ### M4 - Testing foundation
@@ -551,3 +560,19 @@ Append one line per working session. Newest at the bottom.
   (create_app), pydantic-settings, domain-first health slice. GET /health -> {"status":"ok"},
   /docs renders, ruff + ty clean. Note 01 written. Pending manual step: create apps/api/.env and
   .env.example (tool-blocked from writing .env paths).
+- 2026-08-21 - M2 started. ADR-0004 accepted: PostgreSQL datastore (relational core + JSONB +
+  pgvector for M7), run locally via Docker Compose for dev; managed/prod target deferred to M18;
+  persistence style + migrations deferred to M3. Next: async engine/session + DI + health
+  live/ready split.
+- 2026-08-21 - M3 reframed around the conversation core. The domain primitive for a conversational
+  agent is the user and their conversation, not the check-in (which is a structured artifact
+  extracted from a message, deferred to M6). First domain models: users + profiles + conversations
+  + messages. ADR-0005 accepted: SQLAlchemy 2.0 async ORM + Alembic. Profile split into its own 1:1
+  table (identity vs health context, sensitivity boundary), stores date_of_birth not age.
+- 2026-08-21 - M1 hardened to senior skeleton (deep dive 01d): lifespan lifecycle, OpenAPI
+  metadata + path versioning (/api/v1, health left unversioned), unified typed error envelope with
+  handlers (AppError hierarchy + log-then-mask 500), settings hardening (env_prefix VITAE_, frozen,
+  version from package). Layering enforced: core/ imports no domain, api.py is the sole composition
+  point, factory delegates routing. meta moved to /api/v1/meta. Deferred by design to their
+  milestones: structured logging + request IDs (M12), CORS (Phase D), DB readiness (M2), Docker +
+  CI (M18). Note: .env keys now need the VITAE_ prefix (VITAE_ENVIRONMENT, VITAE_DEBUG, ...).
