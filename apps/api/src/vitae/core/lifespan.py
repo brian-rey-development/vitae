@@ -4,16 +4,23 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from vitae.core.db import create_db_engine, create_session_maker
+
 logger = logging.getLogger("vitae")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = app.state.settings
+
+    engine = create_db_engine(settings.database_url)
+    app.state.db_engine = engine
+    app.state.db_sessionmaker = create_session_maker(engine)
     logger.info(
         "startup: Vitae API (env=%s, version=%s)", settings.environment, settings.app_version
     )
-    # M2 will open the database connection pool here and store it on app.state.
+
     yield
-    # M2 will close the database connection pool here.
+
+    await engine.dispose()
     logger.info("shutdown: Vitae API")

@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: vitae
+      POSTGRES_PASSWORD: vitae
+      POSTGRES_DB: vitae
+    ports:
+      - "5432:5432"
+    volumes:
+      - vitae_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vitae -d vitae"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  vitae_pgdata:

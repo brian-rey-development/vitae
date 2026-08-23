@@ -1,0 +1,33 @@
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from vitae.conversations.models import CONVERSATION_TITLE_MAX_LENGTH, MessageRole
+
+MESSAGE_CONTENT_MAX_LENGTH = 8000
+
+
+class ConversationCreate(BaseModel):
+    title: str | None = Field(default=None, max_length=CONVERSATION_TITLE_MAX_LENGTH)
+
+
+class ConversationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str | None
+    created_at: datetime
+
+
+class MessageCreate(BaseModel):
+    content: str = Field(min_length=1, max_length=MESSAGE_CONTENT_MAX_LENGTH)
+
+
+class MessageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    role: MessageRole
+    content: str
+    created_at: datetime
