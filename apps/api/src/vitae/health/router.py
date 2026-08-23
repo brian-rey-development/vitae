@@ -17,11 +17,13 @@ class HealthStatus(BaseModel):
 
 @router.get("/health/live")
 async def live() -> HealthStatus:
+    """Liveness probe: the process is up. Does not touch the datastore."""
     return HealthStatus(status="ok")
 
 
 @router.get("/health/ready")
 async def ready(session: SessionDep) -> HealthStatus:
+    """Readiness probe: the datastore is reachable."""
     try:
         await session.execute(text("SELECT 1"))
     except Exception as exc:

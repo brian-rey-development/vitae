@@ -11,6 +11,7 @@ router = APIRouter(prefix="/me", tags=["users"])
 
 @router.get("/profile")
 async def get_profile(user_id: CurrentUserId, session: SessionDep) -> ProfileRead:
+    """Get the current user's profile."""
     profile = await ProfileRepository(session).get(user_id)
     if profile is None:
         raise NotFoundError("profile not set")
@@ -21,6 +22,7 @@ async def get_profile(user_id: CurrentUserId, session: SessionDep) -> ProfileRea
 async def update_profile(
     payload: ProfileUpdate, user_id: CurrentUserId, session: SessionDep
 ) -> ProfileRead:
+    """Create or update the current user's profile."""
     profile = await ProfileRepository(session).upsert(
         user_id,
         display_name=payload.display_name,

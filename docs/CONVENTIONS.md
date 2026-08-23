@@ -17,8 +17,8 @@ getting broken, promote it up the ladder (add a lint rule) instead of restating 
   - **`core/`** holds cross-cutting *application* code: `settings`, `db`, `auth`, `errors`, the app
     factory, `lifespan`. `core/` never imports a domain.
   - **`<domain>/`** is a vertical slice (`users`, `conversations`, `health`, `meta`, ...).
-  - **`seed.py`** and other management commands use the ORM, so they live in the package (typed,
-    importable, testable).
+  - **`scripts/`** holds management and dev commands run with `python -m` (`seed`, `new_domain`).
+    They use the app, so they live in the package (typed, importable, testable).
 - **`apps/api/` root** holds *operational artifacts* that must NOT ship in the package:
   `alembic/` + `alembic.ini` (migrations), `docker-compose.yml`, `pyproject.toml`, `.env`, `tests/`.
 
@@ -88,7 +88,8 @@ Routers are thin: parse, call a repository or service, return a schema. No busin
 queries. Inject through the shared aliases. Reads map storage to API with `model_validate`; a router
 never returns an ORM object. Writes call the repository, then `await session.commit()`, then return
 the schema. Missing or unowned resources raise `NotFoundError` (404, never 403 - do not reveal that
-another user's resource exists).
+another user's resource exists). Every endpoint carries a one-line docstring; FastAPI publishes it as
+the operation description in `/docs`, so the public API is documented by default.
 
 ```python
 @router.get("/{conversation_id}/messages")
@@ -125,7 +126,7 @@ flags) unless it is deliberately part of the response.
   not dropped by `drop_table`).
 - Every migration has a working `downgrade`.
 - Migrations are schema-only. They run in every environment, so they never seed data. Dev fixtures
-  live in a production-guarded script (`vitae/seed.py`).
+  live in a production-guarded script (`vitae/scripts/seed.py`).
 
 ## Simplicity
 
@@ -142,10 +143,22 @@ The `conversations` slice is the reference implementation. Adding a domain means
 changing the names. If your code does not look like it, it either has a reason worth writing down or
 it is wrong.
 
+## Scaffolding a new domain
+
+Do not hand-write a new slice; generate it so it starts consistent by construction:
+
+    uv run python -m vitae.scripts.new_domain <domain> [--entity <Entity>]
+
+This creates `src/vitae/<domain>/` (models, schemas, repository, router) from the exemplar, with a
+placeholder `name` field and documented endpoints. It then prints the wiring steps it leaves to you:
+register the router in `api.py`, add the `OPENAPI_TAGS` entry, and replace the placeholder field
+before generating the migration.
+
 ## Enforcement status
 
 - Now: `ruff check`, `ruff format`, `ty` (no unjustified ignores). Run the full gate before every
   commit.
+- Available: a domain scaffold generator (`python -m vitae.scripts.new_domain`) so a new slice starts
+  consistent by construction.
 - To add: `import-linter` (encode the layering rules above as CI contracts), `pre-commit` (run the
-  gate locally on commit), CI (the merge wall, formalized in M18), and a domain scaffold generator
-  that stamps a new slice from the exemplar so consistency is mechanical, not manual.
+  gate locally on commit), and CI (the merge wall, formalized in M18).

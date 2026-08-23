@@ -34,6 +34,7 @@ OwnedConversation = Annotated[Conversation, Depends(get_owned_conversation)]
 async def create_conversation(
     payload: ConversationCreate, user_id: CurrentUserId, session: SessionDep
 ) -> ConversationRead:
+    """Create a conversation for the current user."""
     conversation = await ConversationRepository(session).create(user_id, payload.title)
     await session.commit()
     return ConversationRead.model_validate(conversation)
@@ -41,6 +42,7 @@ async def create_conversation(
 
 @router.get("")
 async def list_conversations(user_id: CurrentUserId, session: SessionDep) -> list[ConversationRead]:
+    """List the current user's conversations."""
     conversations = await ConversationRepository(session).list(user_id)
     return [ConversationRead.model_validate(c) for c in conversations]
 
@@ -49,6 +51,7 @@ async def list_conversations(user_id: CurrentUserId, session: SessionDep) -> lis
 async def create_message(
     payload: MessageCreate, conversation: OwnedConversation, session: SessionDep
 ) -> MessageRead:
+    """Add a message to a conversation."""
     message = await MessageRepository(session).create(
         conversation.id, MessageRole.user, payload.content
     )
@@ -58,5 +61,6 @@ async def create_message(
 
 @router.get("/{conversation_id}/messages")
 async def list_messages(conversation: OwnedConversation, session: SessionDep) -> list[MessageRead]:
+    """List a conversation's messages."""
     messages = await MessageRepository(session).list(conversation.id)
     return [MessageRead.model_validate(m) for m in messages]
