@@ -36,20 +36,20 @@ def create_db_engine(database_url: str) -> AsyncEngine:
     return create_async_engine(database_url, pool_pre_ping=True)
 
 
-def create_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+def create_db_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(engine, expire_on_commit=False)
 
 
-def get_session_maker(request: Request) -> async_sessionmaker[AsyncSession]:
+def get_db_session_maker(request: Request) -> async_sessionmaker[AsyncSession]:
     # app.state is dynamically typed; the app factory sets this at startup (see core/lifespan.py).
-    return cast(async_sessionmaker[AsyncSession], request.app.state.db_sessionmaker)
+    return cast(async_sessionmaker[AsyncSession], request.app.state.db_session_maker)
 
 
-async def get_session(
-    sessionmaker: Annotated[async_sessionmaker[AsyncSession], Depends(get_session_maker)],
+async def get_db_session(
+    session_maker: Annotated[async_sessionmaker[AsyncSession], Depends(get_db_session_maker)],
 ) -> AsyncIterator[AsyncSession]:
-    async with sessionmaker() as session:
+    async with session_maker() as session:
         yield session
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_db_session)]

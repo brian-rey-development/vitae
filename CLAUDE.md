@@ -63,6 +63,10 @@ not import another domain's internals; lift shared behavior into `core/` or a na
 interface. Keep the storage model separate from the API request/response schema; never leak
 internals.
 
+The concrete house style (slice anatomy, naming, repository and router patterns, where operational
+tooling lives) is in `docs/CONVENTIONS.md`. Follow it and the exemplar (the `conversations` slice);
+new code should look like it.
+
 ## Quality gate (every milestone, non-negotiable)
 
 Before a milestone is done, all of these pass. Do not claim done without running them:

@@ -3,9 +3,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from vitae.conversations.models import CONVERSATION_TITLE_MAX_LENGTH, MessageRole
-
-MESSAGE_CONTENT_MAX_LENGTH = 8000
+from vitae.conversations.models import (
+    CONVERSATION_TITLE_MAX_LENGTH,
+    MESSAGE_CONTENT_MAX_LENGTH,
+    MessageRole,
+)
 
 
 class ConversationCreate(BaseModel):
