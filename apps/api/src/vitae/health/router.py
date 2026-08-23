@@ -1,12 +1,10 @@
 import logging
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from vitae.core.db import get_session
+from vitae.core.db import SessionDep
 
 logger = logging.getLogger("vitae")
 
@@ -23,7 +21,7 @@ async def live() -> HealthStatus:
 
 
 @router.get("/health/ready")
-async def ready(session: Annotated[AsyncSession, Depends(get_session)]) -> HealthStatus:
+async def ready(session: SessionDep) -> HealthStatus:
     try:
         await session.execute(text("SELECT 1"))
     except Exception as exc:

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from vitae.core.db import create_db_engine, create_session_maker
+from vitae.core.db import create_db_engine, create_db_session_maker
 
 logger = logging.getLogger("vitae")
 
@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     engine = create_db_engine(settings.database_url)
     app.state.db_engine = engine
-    app.state.db_sessionmaker = create_session_maker(engine)
+    app.state.db_session_maker = create_db_session_maker(engine)
     logger.info(
         "startup: Vitae API (env=%s, version=%s)", settings.environment, settings.app_version
     )

@@ -16,7 +16,13 @@ class ConversationRepository:
         await self._session.flush()
         return conversation
 
-    async def list_for_user(self, user_id: uuid.UUID) -> list[Conversation]:
+    async def get(self, conversation_id: uuid.UUID, user_id: uuid.UUID) -> Conversation | None:
+        conversation = await self._session.get(Conversation, conversation_id)
+        if conversation is None or conversation.user_id != user_id:
+            return None
+        return conversation
+
+    async def list(self, user_id: uuid.UUID) -> list[Conversation]:
         result = await self._session.execute(
             select(Conversation)
             .where(Conversation.user_id == user_id)
@@ -24,23 +30,18 @@ class ConversationRepository:
         )
         return list(result.scalars().all())
 
-    async def get_for_user(
-        self, conversation_id: uuid.UUID, user_id: uuid.UUID
-    ) -> Conversation | None:
-        conversation = await self._session.get(Conversation, conversation_id)
-        if conversation is None or conversation.user_id != user_id:
-            return None
-        return conversation
 
-    async def add_message(
-        self, conversation_id: uuid.UUID, role: MessageRole, content: str
-    ) -> Message:
+class MessageRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def create(self, conversation_id: uuid.UUID, role: MessageRole, content: str) -> Message:
         message = Message(conversation_id=conversation_id, role=role, content=content)
         self._session.add(message)
         await self._session.flush()
         return message
 
-    async def list_messages(self, conversation_id: uuid.UUID) -> list[Message]:
+    async def list(self, conversation_id: uuid.UUID) -> list[Message]:
         result = await self._session.execute(
             select(Message)
             .where(Message.conversation_id == conversation_id)

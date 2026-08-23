@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from vitae.core.db import Base, CreatedAtMixin, TimestampMixin, UUIDPrimaryKey
 
 CONVERSATION_TITLE_MAX_LENGTH = 200
+MESSAGE_CONTENT_MAX_LENGTH = 8000
 
 
 class MessageRole(StrEnum):
