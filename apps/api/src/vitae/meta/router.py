@@ -16,6 +16,7 @@ class MetaInfo(BaseModel):
 
 @router.get("/meta")
 def meta(settings: Annotated[Settings, Depends(get_settings)]) -> MetaInfo:
+    """Application metadata (name, environment)."""
     return MetaInfo(
         app_name=settings.app_name,
         environment=settings.environment,

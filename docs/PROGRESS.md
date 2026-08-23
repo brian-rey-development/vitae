@@ -242,7 +242,7 @@ Deliverables:
 - `users/` (User + Profile) and `conversations/` (Conversation + Message) domains, each with
   `models.py`, `schemas.py`, `repository.py`, `router.py`.
 - The first Alembic migration that creates the tables, created and applied. The dev user is seeded
-  by a separate, production-guarded script (`uv run python -m vitae.seed`), not by a migration:
+  by a separate, production-guarded script (`uv run python -m vitae.scripts.seed`), not by a migration:
   migrations run in every environment and must stay schema-only, while dev fixtures are
   environment-specific and re-runnable.
 
