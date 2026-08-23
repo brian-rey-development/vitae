@@ -2,7 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-from vitae.users.models import DISPLAY_NAME_MAX_LENGTH, Sex
+from vitae.modules.users.domain.constants import DISPLAY_NAME_MAX_LENGTH
+from vitae.modules.users.domain.enums import Sex
 
 
 class ProfileUpdate(BaseModel):

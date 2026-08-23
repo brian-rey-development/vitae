@@ -1,164 +1,178 @@
 # Vitae API - Code Conventions
 
 The goal is code that reads as if one person wrote it: predictable, simple, and boring in the best
-way. A new endpoint should look like every existing endpoint. When in doubt, copy the exemplar (the
-`conversations` slice) and change the names.
+way. A new module should look like every existing module. When in doubt, copy the exemplar (the
+`conversations` module) and change the names.
 
 These are the judgment rules that tooling cannot enforce. The floor (formatting, lint, types) is
 enforced automatically by `ruff` and `ty`; this document is the ceiling.
 
 Enforcement ladder: prefer making a rule **impossible** (types, structure) over **automatic**
 (lint, CI) over **reviewed** (PR) over **documented** (this file). If a documented rule keeps
-getting broken, promote it up the ladder (add a lint rule) instead of restating it.
+getting broken, promote it up the ladder instead of restating it.
+
+## Architecture: hexagonal, per module
+
+Each domain is a vertical slice built as a hexagon (ports and adapters). Dependencies point only
+inward: `infra -> application -> domain`, and `infra` also implements the ports the domain declares.
+The domain knows nothing about FastAPI, SQLAlchemy, or Pydantic, so it is testable with zero infra.
+
+```
+infra/http  ->  application  ->  domain  <-  infra/repository
+ (router,        (service,        (entities,    (ORM models,
+  schemas)        use cases)       ports)        adapters, mappers)
+```
 
 ## Where code lives
 
-- **`src/vitae/`** is the importable application package. It ships in the built wheel.
-  - **`core/`** holds cross-cutting *application* code: `settings`, `db`, `auth`, `errors`, the app
-    factory, `lifespan`. `core/` never imports a domain.
-  - **`<domain>/`** is a vertical slice (`users`, `conversations`, `health`, `meta`, ...).
-  - **`scripts/`** holds management and dev commands run with `python -m` (`seed`, `new_domain`).
-    They use the app, so they live in the package (typed, importable, testable).
-- **`apps/api/` root** holds *operational artifacts* that must NOT ship in the package:
-  `alembic/` + `alembic.ini` (migrations), `docker-compose.yml`, `pyproject.toml`, `.env`, `tests/`.
+- **`src/vitae/`** is the importable application package (ships in the wheel).
+  - **`core/`** is cross-cutting framework glue: `config` (all env vars), `db` (engine, session,
+    `Base`, mixins, `SqlUnitOfWork`), `unit_of_work` (the `UnitOfWork` port), `errors`, `auth`, the
+    app factory, `lifespan`, `api`. `core/` never imports a module.
+  - **`modules/<domain>/`** is a hexagonal slice (see anatomy below).
+  - **`health/`, `meta/`** are operational endpoints, not domains; they stay flat (a `router.py`).
+  - **`scripts/`** holds management commands run with `python -m` (`seed`, `new_domain`).
+- **`apps/api/` root** holds operational artifacts that must NOT ship: `alembic/` + `alembic.ini`,
+  `docker-compose.yml`, `pyproject.toml`, `.env`, `tests/`. Migrations are operational, so they live
+  here, never in `core/`.
 
-The dividing rule: application code that ships goes in `src/vitae/`; operational tooling and
-generated artifacts go at the app root. Migrations are operational, so they live in
-`apps/api/alembic/`, never in `core/`.
+## Anatomy of a module
 
-## Anatomy of a domain slice
+```
+modules/<domain>/
+  domain/            # framework-free: stdlib + typing only
+    entities.py      #   frozen dataclasses (the domain model)
+    enums.py         #   domain enums
+    constants.py     #   domain invariants (length limits, ...)
+    ports.py         #   repository interfaces (typing.Protocol)
+  application/
+    services.py      #   the use cases; depends on ports + the UnitOfWork port only
+  infra/
+    http/
+      router.py      #   endpoints + composition root (wires adapters into the service)
+      schemas.py     #   Pydantic request/response
+    repository/
+      models.py      #   SQLAlchemy ORM models (<Entity>Model)
+      repository.py  #   Sql<Entity>Repository, implements the port
+      mappers.py     #   ORM row <-> domain entity
+```
 
-Every domain is a folder with these files, same names everywhere:
+A module never imports another module's internals. Cross-module references are by foreign key (table
+name) only. Anything shared by two modules lifts into `core/`.
 
-- `models.py` - SQLAlchemy storage models, plus the domain's enums and constants.
-- `schemas.py` - Pydantic API models (the wire contract).
-- `repository.py` - persistence, one class per aggregate.
-- `router.py` - HTTP endpoints.
-- `service.py` - business logic, added only when there is logic beyond CRUD.
+## The three representations
 
-A domain never imports another domain's internals. Cross-domain references are by foreign key (table
-name) or id only. Anything shared by two domains lifts into `core/`.
+The same concept appears in three shapes, and they stay separate:
+
+- **Domain entity** (`Conversation`) - a frozen dataclass, the currency of the domain and
+  application layers. It owns identity and time: the service generates the `id` (`uuid4`) and
+  `created_at` (`datetime.now(UTC)`), so the database is storage, not the source of truth for those.
+- **ORM model** (`ConversationModel`) - SQLAlchemy, storage only, in `infra/repository`.
+- **API schema** (`ConversationCreate` / `ConversationRead`) - Pydantic, the wire contract, in
+  `infra/http`. A response never exposes an internal field (`user_id`) unless intended.
+
+Mappers translate ORM <-> entity; the router maps entity -> schema with `model_validate`.
+
+## Unit of Work: the service commits, never the router
+
+The transaction boundary is an application concern. The service depends on the `UnitOfWork` port and
+calls `await uow.commit()` after a mutation; it never imports `AsyncSession`. The SQLAlchemy
+`SqlUnitOfWork` (in `core/db.py`) is the adapter. The router's composition root wires the
+session-bound repositories and the UoW into the service; endpoints just call the service.
 
 ## Naming
 
-- Modules and packages: lowercase; domains are plural (`users`, `conversations`).
-- Storage models: the singular noun (`User`, `Conversation`, `Message`).
-- API schemas: `<Resource>Create` and `<Resource>Update` for requests, `<Resource>Read` for a
-  resource response. Responses that are not a resource are named descriptively (`HealthStatus`,
-  `MetaInfo`), never with an `Output`/`DTO` suffix.
-- Functions and variables: `snake_case`, intent-revealing. Booleans read as predicates
-  (`is_production`, `had_birthday`).
-- Factories are `create_<thing>` (`create_db_engine`, `create_db_session_maker`); accessors are
-  `get_<thing>`.
-- Dependency-injection aliases are `PascalCase` (`SessionDep`, `CurrentUserId`, `OwnedConversation`),
-  defined once in the module that owns the dependency and imported everywhere. Never re-inline
-  `Annotated[T, Depends(...)]` at a call site.
-- Constants are `UPPER_SNAKE`, co-located with what they constrain (length limits live in
-  `models.py`).
+- Modules and packages are lowercase; domains are plural (`users`, `conversations`).
+- Domain entity = the singular noun (`Conversation`). ORM model = `<Entity>Model`. Repository
+  implementation = `Sql<Entity>Repository`. Application service = `<Entity>Service`.
+- Ports are the plain interface name (`ConversationRepository`), a `typing.Protocol`.
+- API schemas: `<Resource>Create` / `<Resource>Update` (requests), `<Resource>Read` (responses).
+  Non-resource responses are named descriptively (`HealthStatus`, `MetaInfo`).
+- Repository methods: `add`, `get`, `list_all`, `upsert`. Never name a method `list` - it shadows the
+  builtin and `ty` then rejects `-> list[...]` return annotations.
+- Factories are `create_<thing>`; accessors are `get_<thing>`. DI aliases are `PascalCase`
+  (`SessionDep`, `CurrentUserId`, `ServiceDep`), defined once and imported, never re-inlined.
+- Constants are `UPPER_SNAKE`, co-located in the domain that owns the invariant.
 - One concept, one spelling, forever. It is `session_maker`, never `sessionmaker`.
-
-## Repositories
-
-One class per aggregate, constructed with a session: `ConversationRepository(session)`. Standard
-method vocabulary, where parameters express the scope:
-
-- `create(...) -> Entity`
-- `get(id, ...) -> Entity | None` - by primary key; an extra owner argument makes it
-  ownership-scoped and returns `None` when not owned.
-- `list(...) -> list[Entity]`
-- `upsert(...) -> Entity` - atomic create-or-update (`ON CONFLICT`).
-
-Repositories `flush`, never `commit`. The router owns the transaction boundary.
-
-```python
-class MessageRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-
-    async def create(self, conversation_id: uuid.UUID, role: MessageRole, content: str) -> Message:
-        message = Message(conversation_id=conversation_id, role=role, content=content)
-        self._session.add(message)
-        await self._session.flush()
-        return message
-```
 
 ## Routers
 
-Routers are thin: parse, call a repository or service, return a schema. No business logic, no raw
-queries. Inject through the shared aliases. Reads map storage to API with `model_validate`; a router
-never returns an ORM object. Writes call the repository, then `await session.commit()`, then return
-the schema. Missing or unowned resources raise `NotFoundError` (404, never 403 - do not reveal that
-another user's resource exists). Every endpoint carries a one-line docstring; FastAPI publishes it as
-the operation description in `/docs`, so the public API is documented by default.
-
-```python
-@router.get("/{conversation_id}/messages")
-async def list_messages(conversation: OwnedConversation, session: SessionDep) -> list[MessageRead]:
-    messages = await MessageRepository(session).list(conversation.id)
-    return [MessageRead.model_validate(m) for m in messages]
-```
-
-## Storage model vs API schema
-
-The SQLAlchemy model is storage-only; the Pydantic schema is the wire contract. They are separate
-classes and the router maps between them. Never expose an internal column (`user_id`, soft-delete
-flags) unless it is deliberately part of the response.
+Thin: parse, call the service, return a schema. No business logic, no queries, no commits. Inject the
+service through `ServiceDep`; reads map entity -> schema with `model_validate` (never return an ORM
+object or an entity directly). Missing or unowned resources raise `NotFoundError` (404, never 403 -
+do not reveal another user's resource exists). Every endpoint carries a one-line docstring; FastAPI
+publishes it as the operation description in `/docs`, so the public API is documented by default.
 
 ## Validation, errors, robustness
 
 - Validate untrusted input at the edge with Pydantic (`Field` constraints, `field_validator`), then
   trust the typed core. The LLM is just another untrusted boundary.
-- Fail fast and loud: no silent fallback, no bare `except` that swallows. Errors raise `AppError`
-  subclasses and render through the single error envelope.
+- Fail fast and loud: no silent fallback, no bare `except`. Errors raise `AppError` subclasses and
+  render through the single error envelope.
 - Derived values are computed, never stored (`age` from `date_of_birth`).
-- Writes that can be repeated are idempotent (profile `upsert`).
+- Writes that can repeat are idempotent (profile `upsert` via `ON CONFLICT`).
 
 ## Async and database
 
-- One session per request (`SessionDep`), `expire_on_commit=False` so attributes survive commit.
-- No blocking calls in an async path.
-- Timezone-aware datetimes only (`DateTime(timezone=True)`).
-- Parameterized SQL only; no secrets in code, config comes from settings.
+- One session per request (`SessionDep`), `expire_on_commit=False`.
+- No blocking calls in an async path. Timezone-aware datetimes only.
+- Parameterized SQL only; no secrets in code, config comes from `core/config`.
 
 ## Migrations
 
-- Autogenerate is a draft, always reviewed by eye and corrected (for example, Postgres enum types are
-  not dropped by `drop_table`).
-- Every migration has a working `downgrade`.
-- Migrations are schema-only. They run in every environment, so they never seed data. Dev fixtures
-  live in a production-guarded script (`vitae/scripts/seed.py`).
+- Autogenerate is a draft: reviewed by eye and corrected (Postgres enum types are not dropped by
+  `drop_table`). Every migration has a working `downgrade`.
+- Migrations are schema-only and run in every environment, so they never seed data. Dev fixtures live
+  in a production-guarded script (`vitae/scripts/seed.py`).
+
+## Testing
+
+Tests mirror the architecture and the test pyramid. A test file is named after the source unit it
+exercises and declares its tier with `pytestmark`.
+
+```
+tests/
+  conftest.py                    # shared fixtures: rolled-back session, ASGI client
+  unit/<module>/test_service.py         # fast, no I/O: service with fake ports
+  integration/<module>/test_api.py      # real Postgres + ASGI app, per-test rollback
+```
+
+- **unit** (`pytestmark = pytest.mark.unit`) tests the application/domain with fake repositories and
+  a fake UoW. No database, no HTTP. This is the payoff of hexagonal - run with `uv run pytest -m
+  unit`.
+- **integration** (`pytestmark = pytest.mark.integration`) drives the endpoints through the ASGI app
+  against a throwaway `vitae_test` database. Each test runs in a transaction rolled back afterward
+  (`join_transaction_mode="create_savepoint"`), so the app's real commits stay isolated.
+- Add a `test_repository.py` under `integration/<module>/` only when a repository needs coverage the
+  API path does not give (for example the atomic upsert).
+- `health` and `meta` are modules like any other: `tests/integration/health/`, `.../meta/`.
+
+From M4 on, no feature merges without tests.
 
 ## Simplicity
 
 - YAGNI: build the current milestone's need, nothing speculative.
-- Rule of three: do not extract an abstraction until the third repetition.
-- Delete dead code immediately; no commented-out code.
-- Functions stay small (about 20 lines), do one job, use guard clauses over nesting, and take no
-  flag arguments (a boolean that switches behavior is two functions).
-- Default to zero comments; a comment explains a non-obvious *why*, never restates the code.
+- Rule of three before extracting an abstraction. Delete dead code; no commented-out code.
+- Functions stay small, do one job, use guard clauses over nesting, take no flag arguments.
+- Default to zero comments; a comment explains a non-obvious *why*, never restates the code (endpoint
+  docstrings are the one documented exception, since they are the public API contract).
 
-## The exemplar
+## The exemplar and the generator
 
-The `conversations` slice is the reference implementation. Adding a domain means copying it and
-changing the names. If your code does not look like it, it either has a reason worth writing down or
-it is wrong.
-
-## Scaffolding a new domain
-
-Do not hand-write a new slice; generate it so it starts consistent by construction:
+The `conversations` module is the reference implementation. Do not hand-write a new module; generate
+it so it starts consistent by construction, tests included:
 
     uv run python -m vitae.scripts.new_domain <domain> [--entity <Entity>]
 
-This creates `src/vitae/<domain>/` (models, schemas, repository, router) from the exemplar, with a
-placeholder `name` field and documented endpoints. It then prints the wiring steps it leaves to you:
-register the router in `api.py`, add the `OPENAPI_TAGS` entry, and replace the placeholder field
-before generating the migration.
+It creates `src/vitae/modules/<domain>/` (all layers) plus `tests/unit/<domain>/test_service.py` and
+`tests/integration/<domain>/test_api.py`, runs `ruff` over the output, and prints the wiring steps it
+leaves to you (register the router, add the `OPENAPI_TAGS` entry, register the model in
+`alembic/env.py`, replace the placeholder field, generate the migration).
 
 ## Enforcement status
 
-- Now: `ruff check`, `ruff format`, `ty` (no unjustified ignores). Run the full gate before every
-  commit.
-- Available: a domain scaffold generator (`python -m vitae.scripts.new_domain`) so a new slice starts
-  consistent by construction.
-- To add: `import-linter` (encode the layering rules above as CI contracts), `pre-commit` (run the
+- Now: `ruff check`, `ruff format`, `ty` (no unjustified ignores), `pytest` (unit + integration). Run
+  the full gate before every commit.
+- Available: the domain scaffold generator, so a new module starts consistent and tested.
+- To add: `import-linter` (encode the dependency rule above as CI contracts), `pre-commit` (run the
   gate locally on commit), and CI (the merge wall, formalized in M18).

@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 
 from vitae.api import register_routers
+from vitae.core.config import Settings, get_settings
 from vitae.core.errors import register_error_handlers
 from vitae.core.lifespan import lifespan
-from vitae.core.settings import Settings, get_settings
 
 OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and readiness probes."},
