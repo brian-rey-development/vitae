@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from vitae.core.settings import Settings, get_settings
+from vitae.core.config import Settings, get_settings
 
 router = APIRouter(tags=["meta"])
 

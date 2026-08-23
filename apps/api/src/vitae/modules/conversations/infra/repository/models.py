@@ -1,22 +1,15 @@
 import uuid
-from enum import StrEnum
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from vitae.core.db import Base, CreatedAtMixin, TimestampMixin, UUIDPrimaryKey
-
-CONVERSATION_TITLE_MAX_LENGTH = 200
-MESSAGE_CONTENT_MAX_LENGTH = 8000
-
-
-class MessageRole(StrEnum):
-    user = "user"
-    assistant = "assistant"
+from vitae.modules.conversations.domain.constants import CONVERSATION_TITLE_MAX_LENGTH
+from vitae.modules.conversations.domain.enums import MessageRole
 
 
-class Conversation(UUIDPrimaryKey, TimestampMixin, Base):
+class ConversationModel(UUIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "conversations"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -24,14 +17,14 @@ class Conversation(UUIDPrimaryKey, TimestampMixin, Base):
     )
     title: Mapped[str | None] = mapped_column(String(CONVERSATION_TITLE_MAX_LENGTH))
 
-    messages: Mapped[list["Message"]] = relationship(
+    messages: Mapped[list["MessageModel"]] = relationship(
         back_populates="conversation",
         cascade="all, delete-orphan",
-        order_by="Message.created_at",
+        order_by="MessageModel.created_at",
     )
 
 
-class Message(UUIDPrimaryKey, CreatedAtMixin, Base):
+class MessageModel(UUIDPrimaryKey, CreatedAtMixin, Base):
     __tablename__ = "messages"
 
     conversation_id: Mapped[uuid.UUID] = mapped_column(
@@ -40,4 +33,4 @@ class Message(UUIDPrimaryKey, CreatedAtMixin, Base):
     role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole, name="message_role"))
     content: Mapped[str] = mapped_column(Text())
 
-    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
+    conversation: Mapped["ConversationModel"] = relationship(back_populates="messages")

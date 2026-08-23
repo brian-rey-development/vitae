@@ -53,3 +53,11 @@ async def get_db_session(
 
 
 SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
+
+
+class SqlUnitOfWork:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def commit(self) -> None:
+        await self._session.commit()

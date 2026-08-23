@@ -1,9 +1,9 @@
 import asyncio
 
 from vitae.core.auth import DEV_USER_ID
+from vitae.core.config import get_settings
 from vitae.core.db import create_db_engine, create_db_session_maker
-from vitae.core.settings import get_settings
-from vitae.users.models import User
+from vitae.modules.users.infra.repository.models import UserModel
 
 
 async def seed_dev_user() -> None:
@@ -15,8 +15,8 @@ async def seed_dev_user() -> None:
     session_maker = create_db_session_maker(engine)
     try:
         async with session_maker() as session:
-            if await session.get(User, DEV_USER_ID) is None:
-                session.add(User(id=DEV_USER_ID))
+            if await session.get(UserModel, DEV_USER_ID) is None:
+                session.add(UserModel(id=DEV_USER_ID))
                 await session.commit()
     finally:
         await engine.dispose()

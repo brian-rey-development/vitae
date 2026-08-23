@@ -569,6 +569,14 @@ Append one line per working session. Newest at the bottom.
   extracted from a message, deferred to M6). First domain models: users + profiles + conversations
   + messages. ADR-0005 accepted: SQLAlchemy 2.0 async ORM + Alembic. Profile split into its own 1:1
   table (identity vs health context, sensitivity boundary), stores date_of_birth not age.
+- 2026-08-23 - Adopted hexagonal architecture per module (ADR-0006): src/vitae/modules/<domain>/
+  {domain,application,infra}. Framework-free domain (frozen entities + Protocol ports), application
+  services own the transaction via a UnitOfWork port (routers never commit), infra adapters
+  (SQLAlchemy models + mappers + Sql repositories, FastAPI http). Renamed core/settings.py ->
+  core/config.py. Migrated users + conversations. Test foundation (M4): pytest + pytest-asyncio +
+  httpx, tests/{unit,integration}/<module>/ pyramid with markers, throwaway vitae_test DB with
+  per-test savepoint rollback; 17 tests green. new_domain generator stamps a full hexagonal module
+  plus unit and integration tests. CONVENTIONS.md rewritten around it.
 - 2026-08-21 - M1 hardened to senior skeleton (deep dive 01d): lifespan lifecycle, OpenAPI
   metadata + path versioning (/api/v1, health left unversioned), unified typed error envelope with
   handlers (AppError hierarchy + log-then-mask 500), settings hardening (env_prefix VITAE_, frozen,
