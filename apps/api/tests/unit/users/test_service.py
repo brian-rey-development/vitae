@@ -1,13 +1,23 @@
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 
-from vitae.modules.users.application.services import ProfileService
-from vitae.modules.users.domain.entities import Profile
+from vitae.modules.users.application.services import ProfileService, UserService
+from vitae.modules.users.domain.entities import Profile, User
 from vitae.modules.users.domain.enums import Sex
 
 pytestmark = pytest.mark.unit
+
+
+class FakeUserRepository:
+    def __init__(self, user: User | None = None) -> None:
+        self._user = user
+
+    async def get(self, user_id: uuid.UUID) -> User | None:
+        if self._user is not None and self._user.id == user_id:
+            return self._user
+        return None
 
 
 class FakeProfileRepository:
@@ -28,6 +38,18 @@ class FakeUnitOfWork:
 
     async def commit(self) -> None:
         self.commits += 1
+
+
+async def test_get_user_returns_the_user() -> None:
+    user = User(id=uuid.uuid4(), email="a@vitae.local", created_at=datetime.now(UTC))
+    service = UserService(FakeUserRepository(user))
+
+    assert await service.get_user(user.id) == user
+
+
+async def test_get_user_missing_returns_none() -> None:
+    service = UserService(FakeUserRepository())
+    assert await service.get_user(uuid.uuid4()) is None
 
 
 async def test_update_profile_upserts_and_commits() -> None:

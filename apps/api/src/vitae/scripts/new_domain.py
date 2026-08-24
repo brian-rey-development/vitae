@@ -105,7 +105,7 @@ from vitae.modules.{domain}.infra.persistence.mappers import to_{var}, to_{var}_
 from vitae.modules.{domain}.infra.persistence.models import {model}Model
 
 
-class Sql{model}Repository:
+class Postgres{model}Repository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
@@ -151,17 +151,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from vitae.core.database import SessionDep, SqlUnitOfWork
+from vitae.core.database import SessionDep, PostgresUnitOfWork
 from vitae.core.errors import NotFoundError
 from vitae.modules.{domain}.application.services import {model}Service
 from vitae.modules.{domain}.infra.http.schemas import {model}Create, {model}Read
-from vitae.modules.{domain}.infra.persistence.repository import Sql{model}Repository
+from vitae.modules.{domain}.infra.persistence.repository import Postgres{model}Repository
 
 router = APIRouter(prefix="/{domain}", tags=["{domain}"])
 
 
 def get_{var}_service(session: SessionDep) -> {model}Service:
-    return {model}Service(Sql{model}Repository(session), SqlUnitOfWork(session))
+    return {model}Service(Postgres{model}Repository(session), PostgresUnitOfWork(session))
 
 
 ServiceDep = Annotated[{model}Service, Depends(get_{var}_service)]

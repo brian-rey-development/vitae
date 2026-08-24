@@ -37,7 +37,7 @@ async def _prepare_database() -> None:
         await connection.run_sync(Base.metadata.create_all)
     session_maker = async_sessionmaker(engine, expire_on_commit=False)
     async with session_maker() as session:
-        session.add(UserModel(id=DEV_USER_ID))
+        session.add(UserModel(id=DEV_USER_ID, email="dev@example.com"))
         await session.commit()
     await engine.dispose()
 

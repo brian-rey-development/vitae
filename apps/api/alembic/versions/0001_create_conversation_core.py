@@ -1,20 +1,20 @@
 """create conversation core
 
-Revision ID: c0508b74cf50
-Revises: 
+Revision ID: 0001
+Revises:
 Create Date: 2026-08-21 18:29:49.401675
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
 import sqlalchemy as sa
 
-
-revision: str = '0001'
-down_revision: Union[str, Sequence[str], None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "0001"
+down_revision: str | Sequence[str] | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

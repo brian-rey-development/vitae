@@ -3,7 +3,24 @@ from httpx import AsyncClient
 
 pytestmark = pytest.mark.integration
 
+ME = "/api/v1/me"
 PROFILE = "/api/v1/me/profile"
+
+
+async def test_me_returns_email_and_null_profile_initially(client: AsyncClient) -> None:
+    response = await client.get(ME)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["email"] == "dev@example.com"
+    assert body["profile"] is None
+
+
+async def test_me_embeds_profile_once_set(client: AsyncClient) -> None:
+    await client.put(PROFILE, json={"display_name": "Bri", "date_of_birth": "1995-03-10"})
+
+    body = (await client.get(ME)).json()
+    assert body["profile"]["display_name"] == "Bri"
+    assert body["profile"]["age"] is not None
 
 
 async def test_profile_missing_returns_404(client: AsyncClient) -> None:

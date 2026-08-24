@@ -7,7 +7,7 @@ class UnitOfWork(Protocol):
     async def commit(self) -> None: ...
 
 
-class SqlUnitOfWork:
+class PostgresUnitOfWork:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

@@ -6,13 +6,13 @@ from vitae.core.database.orm import (
     UUIDPrimaryKey,
 )
 from vitae.core.database.session import SessionDep, get_db_session
-from vitae.core.database.unit_of_work import SqlUnitOfWork, UnitOfWork
+from vitae.core.database.unit_of_work import PostgresUnitOfWork, UnitOfWork
 
 __all__ = [
     "Base",
     "CreatedAtMixin",
+    "PostgresUnitOfWork",
     "SessionDep",
-    "SqlUnitOfWork",
     "TimestampMixin",
     "UUIDPrimaryKey",
     "UnitOfWork",

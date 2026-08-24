@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field, field_validator
 
 from vitae.modules.users.domain.constants import DISPLAY_NAME_MAX_LENGTH
 from vitae.modules.users.domain.enums import Sex
@@ -35,3 +35,8 @@ class ProfileRead(BaseModel):
         birthday = (self.date_of_birth.month, self.date_of_birth.day)
         had_birthday = (today.month, today.day) >= birthday
         return today.year - self.date_of_birth.year - (0 if had_birthday else 1)
+
+
+class MeRead(BaseModel):
+    email: EmailStr
+    profile: ProfileRead | None

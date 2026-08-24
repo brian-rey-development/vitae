@@ -17,7 +17,7 @@ We will split each module under `src/vitae/modules/<domain>/` into ports and ada
 
 `application/` holds the use cases. A service depends only on the domain ports and a `UnitOfWork` port. The service owns the transaction boundary with `uow.commit()`. It never imports a session.
 
-`infra/` holds the adapters. `persistence/` has the SQLAlchemy `<Entity>Model`, the mappers, and the `Sql<Entity>Repository` that implements the port. `http/` has the FastAPI router and Pydantic schemas. The router is the composition root. It wires the concrete adapters into the service.
+`infra/` holds the adapters. `persistence/` has the SQLAlchemy `<Entity>Model`, the mappers, and the `Postgres<Entity>Repository` that implements the port. `http/` has the FastAPI router and Pydantic schemas. The router is the composition root. It wires the concrete adapters into the service.
 
 Dependencies point only inward. `infra` depends on `application`, which depends on `domain`. Infra implements the domain's ports. The domain owns identity and time (the service generates `id` and `created_at`). Health and meta stay flat. They are not a domain.
 
