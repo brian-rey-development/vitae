@@ -132,6 +132,10 @@ publishes it as the operation description in `/docs`, so the public API is docum
   `drop_table`). Every migration has a working `downgrade`.
 - Migrations are schema-only and run in every environment, so they never seed data. Dev fixtures live
   in a production-guarded script (`vitae/scripts/seed.py`).
+- Revision ids are zero-padded sequential (`0001`, `0002`, ...), so files sort and read in order. The
+  `process_revision_directives` hook in `alembic/env.py` assigns the next number automatically, so
+  `alembic revision` never falls back to a random hex. Trade-off: two migrations authored on parallel
+  branches can grab the same number and need a manual renumber on merge - acceptable at this scale.
 
 ## Testing
 

@@ -1,14 +1,20 @@
 import asyncio
+from collections.abc import Iterable
 from logging.config import fileConfig
 
 from alembic import context
+from alembic.operations import MigrationScript
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from vitae.core.config import get_settings
 from vitae.core.database import Base
-from vitae.modules.conversations.infra.persistence import models as conversation_models  # noqa: F401
+from vitae.modules.conversations.infra.persistence import (
+    models as conversation_models,  # noqa: F401
+)
 from vitae.modules.users.infra.persistence import models as user_models  # noqa: F401
 
 config = context.config
@@ -19,12 +25,27 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+_REVISION_ID_WIDTH = 4
+
+
+def use_sequential_revision_id(
+    migration_context: MigrationContext,
+    revision: Iterable[str | None],
+    directives: list[MigrationScript],
+) -> None:
+    if not directives:
+        return
+    head = ScriptDirectory.from_config(context.config).get_current_head()
+    next_number = 1 if head is None else int(head) + 1
+    directives[0].rev_id = f"{next_number:0{_REVISION_ID_WIDTH}d}"
+
 
 def do_run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
+        process_revision_directives=use_sequential_revision_id,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -48,6 +69,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        process_revision_directives=use_sequential_revision_id,
     )
     with context.begin_transaction():
         context.run_migrations()
