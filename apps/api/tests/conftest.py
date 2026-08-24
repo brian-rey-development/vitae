@@ -10,12 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from vitae.core.app import create_app
 from vitae.core.auth import DEV_USER_ID
 from vitae.core.config import get_settings
-from vitae.core.db import Base, get_db_session
-from vitae.modules.conversations.infra.repository import (
+from vitae.core.database import Base, get_db_session
+from vitae.modules.conversations.infra.persistence import (
     models as _conversation_models,  # noqa: F401
 )
-from vitae.modules.users.infra.repository import models as _user_models  # noqa: F401
-from vitae.modules.users.infra.repository.models import UserModel
+from vitae.modules.users.infra.persistence import models as _user_models  # noqa: F401
+from vitae.modules.users.infra.persistence.models import UserModel
 
 TEST_DB_NAME = "vitae_test"
 

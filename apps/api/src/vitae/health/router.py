@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from vitae.core.db import SessionDep
+from vitae.core.database import SessionDep
 
 logger = logging.getLogger("vitae")
 

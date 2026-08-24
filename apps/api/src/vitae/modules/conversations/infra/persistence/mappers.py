@@ -1,5 +1,5 @@
 from vitae.modules.conversations.domain.entities import Conversation, Message
-from vitae.modules.conversations.infra.repository.models import ConversationModel, MessageModel
+from vitae.modules.conversations.infra.persistence.models import ConversationModel, MessageModel
 
 
 def to_conversation(model: ConversationModel) -> Conversation:

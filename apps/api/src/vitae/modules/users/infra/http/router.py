@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from vitae.core.auth import CurrentUserId
-from vitae.core.db import SessionDep, SqlUnitOfWork
+from vitae.core.database import SessionDep, SqlUnitOfWork
 from vitae.core.errors import NotFoundError
 from vitae.modules.users.application.services import ProfileService
 from vitae.modules.users.infra.http.schemas import ProfileRead, ProfileUpdate
-from vitae.modules.users.infra.repository.repository import SqlProfileRepository
+from vitae.modules.users.infra.persistence.repository import SqlProfileRepository
 
 router = APIRouter(prefix="/me", tags=["users"])
 

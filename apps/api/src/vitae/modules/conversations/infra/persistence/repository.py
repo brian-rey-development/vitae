@@ -4,13 +4,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vitae.modules.conversations.domain.entities import Conversation, Message
-from vitae.modules.conversations.infra.repository.mappers import (
+from vitae.modules.conversations.infra.persistence.mappers import (
     to_conversation,
     to_conversation_model,
     to_message,
     to_message_model,
 )
-from vitae.modules.conversations.infra.repository.models import ConversationModel, MessageModel
+from vitae.modules.conversations.infra.persistence.models import ConversationModel, MessageModel
 
 
 class SqlConversationRepository:

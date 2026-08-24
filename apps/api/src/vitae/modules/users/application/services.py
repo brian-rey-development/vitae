@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 
-from vitae.core.unit_of_work import UnitOfWork
+from vitae.core.database import UnitOfWork
 from vitae.modules.users.domain.entities import Profile
 from vitae.modules.users.domain.enums import Sex
 from vitae.modules.users.domain.ports import ProfileRepository

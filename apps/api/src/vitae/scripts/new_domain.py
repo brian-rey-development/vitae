@@ -47,7 +47,7 @@ class {model}Repository(Protocol):
 _SERVICES = """import uuid
 from datetime import UTC, datetime
 
-from vitae.core.unit_of_work import UnitOfWork
+from vitae.core.database import UnitOfWork
 from vitae.modules.{domain}.domain.entities import {model}
 from vitae.modules.{domain}.domain.ports import {model}Repository
 
@@ -73,7 +73,7 @@ class {model}Service:
 _MODELS = """from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from vitae.core.db import Base, TimestampMixin, UUIDPrimaryKey
+from vitae.core.database import Base, TimestampMixin, UUIDPrimaryKey
 from vitae.modules.{domain}.domain.constants import {name_const}
 
 
@@ -84,7 +84,7 @@ class {model}Model(UUIDPrimaryKey, TimestampMixin, Base):
 """
 
 _MAPPERS = """from vitae.modules.{domain}.domain.entities import {model}
-from vitae.modules.{domain}.infra.repository.models import {model}Model
+from vitae.modules.{domain}.infra.persistence.models import {model}Model
 
 
 def to_{var}(model: {model}Model) -> {model}:
@@ -101,8 +101,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vitae.modules.{domain}.domain.entities import {model}
-from vitae.modules.{domain}.infra.repository.mappers import to_{var}, to_{var}_model
-from vitae.modules.{domain}.infra.repository.models import {model}Model
+from vitae.modules.{domain}.infra.persistence.mappers import to_{var}, to_{var}_model
+from vitae.modules.{domain}.infra.persistence.models import {model}Model
 
 
 class Sql{model}Repository:
@@ -151,11 +151,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from vitae.core.db import SessionDep, SqlUnitOfWork
+from vitae.core.database import SessionDep, SqlUnitOfWork
 from vitae.core.errors import NotFoundError
 from vitae.modules.{domain}.application.services import {model}Service
 from vitae.modules.{domain}.infra.http.schemas import {model}Create, {model}Read
-from vitae.modules.{domain}.infra.repository.repository import Sql{model}Repository
+from vitae.modules.{domain}.infra.persistence.repository import Sql{model}Repository
 
 router = APIRouter(prefix="/{domain}", tags=["{domain}"])
 
@@ -202,10 +202,10 @@ _FILES = {
     "infra/http/__init__.py": "",
     "infra/http/schemas.py": _SCHEMAS,
     "infra/http/router.py": _ROUTER,
-    "infra/repository/__init__.py": "",
-    "infra/repository/models.py": _MODELS,
-    "infra/repository/mappers.py": _MAPPERS,
-    "infra/repository/repository.py": _REPOSITORY,
+    "infra/persistence/__init__.py": "",
+    "infra/persistence/models.py": _MODELS,
+    "infra/persistence/mappers.py": _MAPPERS,
+    "infra/persistence/repository.py": _REPOSITORY,
 }
 
 
@@ -284,7 +284,7 @@ def _next_steps(domain: str, model: str) -> str:
         f"  2. src/vitae/core/app.py OPENAPI_TAGS:\n"
         f'       {{"name": "{domain}", "description": "..."}},\n'
         f"  3. alembic/env.py:\n"
-        f"       from vitae.modules.{domain}.infra.repository import models  # noqa: F401\n"
+        f"       from vitae.modules.{domain}.infra.persistence import models  # noqa: F401\n"
         f"  4. Replace the placeholder `name` field with the real fields, then:\n"
         f'       uv run alembic revision --autogenerate -m "create {domain}"\n'
         f"       # review the migration by eye, then\n"
