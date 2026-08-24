@@ -6,44 +6,18 @@ from fastapi import APIRouter, Depends
 from vitae.core.auth import CurrentUserId
 from vitae.core.database import PostgresUnitOfWork, SessionDep
 from vitae.core.errors import NotFoundError
-from vitae.modules.conversations.application.services import ConversationService
-from vitae.modules.conversations.domain.entities import Conversation
-from vitae.modules.conversations.domain.enums import MessageRole
-from vitae.modules.conversations.infra.http.schemas import (
-    ConversationCreate,
-    ConversationRead,
-    MessageCreate,
-    MessageRead,
-)
-from vitae.modules.conversations.infra.persistence.repository import (
-    PostgresConversationRepository,
-    PostgresMessageRepository,
-)
+from vitae.modules.conversations.application.service import ConversationService
+from vitae.modules.conversations.infra.http.schemas import ConversationCreate, ConversationRead
+from vitae.modules.conversations.infra.persistence.repository import PostgresConversationRepository
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
 def get_conversation_service(session: SessionDep) -> ConversationService:
-    return ConversationService(
-        PostgresConversationRepository(session),
-        PostgresMessageRepository(session),
-        PostgresUnitOfWork(session),
-    )
+    return ConversationService(PostgresConversationRepository(session), PostgresUnitOfWork(session))
 
 
 ServiceDep = Annotated[ConversationService, Depends(get_conversation_service)]
-
-
-async def get_owned_conversation(
-    conversation_id: uuid.UUID, user_id: CurrentUserId, service: ServiceDep
-) -> Conversation:
-    conversation = await service.get(conversation_id, user_id)
-    if conversation is None:
-        raise NotFoundError("conversation not found")
-    return conversation
-
-
-OwnedConversation = Annotated[Conversation, Depends(get_owned_conversation)]
 
 
 @router.post("")
@@ -62,17 +36,12 @@ async def list_conversations(user_id: CurrentUserId, service: ServiceDep) -> lis
     return [ConversationRead.model_validate(c) for c in conversations]
 
 
-@router.post("/{conversation_id}/messages")
-async def create_message(
-    payload: MessageCreate, conversation: OwnedConversation, service: ServiceDep
-) -> MessageRead:
-    """Add a message to a conversation."""
-    message = await service.add_message(conversation.id, MessageRole.user, payload.content)
-    return MessageRead.model_validate(message)
-
-
-@router.get("/{conversation_id}/messages")
-async def list_messages(conversation: OwnedConversation, service: ServiceDep) -> list[MessageRead]:
-    """List a conversation's messages."""
-    messages = await service.list_messages(conversation.id)
-    return [MessageRead.model_validate(m) for m in messages]
+@router.get("/{conversation_id}")
+async def get_conversation(
+    conversation_id: uuid.UUID, user_id: CurrentUserId, service: ServiceDep
+) -> ConversationRead:
+    """Get one of the current user's conversations."""
+    conversation = await service.get(conversation_id, user_id)
+    if conversation is None:
+        raise NotFoundError("conversation not found")
+    return ConversationRead.model_validate(conversation)

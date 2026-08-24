@@ -14,6 +14,8 @@ from vitae.core.database import Base, get_db_session
 from vitae.modules.conversations.infra.persistence import (
     models as _conversation_models,  # noqa: F401
 )
+from vitae.modules.messages.infra.persistence import models as _message_models  # noqa: F401
+from vitae.modules.profiles.infra.persistence import models as _profile_models  # noqa: F401
 from vitae.modules.users.infra.persistence import models as _user_models  # noqa: F401
 from vitae.modules.users.infra.persistence.models import UserModel
 

@@ -15,6 +15,8 @@ from vitae.core.database import Base
 from vitae.modules.conversations.infra.persistence import (
     models as conversation_models,  # noqa: F401
 )
+from vitae.modules.messages.infra.persistence import models as message_models  # noqa: F401
+from vitae.modules.profiles.infra.persistence import models as profile_models  # noqa: F401
 from vitae.modules.users.infra.persistence import models as user_models  # noqa: F401
 
 config = context.config

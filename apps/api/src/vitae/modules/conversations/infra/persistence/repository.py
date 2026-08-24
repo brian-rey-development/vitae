@@ -3,14 +3,12 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from vitae.modules.conversations.domain.entities import Conversation, Message
+from vitae.modules.conversations.domain.entities import Conversation
 from vitae.modules.conversations.infra.persistence.mappers import (
     to_conversation,
     to_conversation_model,
-    to_message,
-    to_message_model,
 )
-from vitae.modules.conversations.infra.persistence.models import ConversationModel, MessageModel
+from vitae.modules.conversations.infra.persistence.models import ConversationModel
 
 
 class PostgresConversationRepository:
@@ -34,20 +32,3 @@ class PostgresConversationRepository:
             .order_by(ConversationModel.created_at.desc())
         )
         return [to_conversation(model) for model in result.scalars().all()]
-
-
-class PostgresMessageRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-
-    async def add(self, message: Message) -> None:
-        self._session.add(to_message_model(message))
-        await self._session.flush()
-
-    async def list_all(self, conversation_id: uuid.UUID) -> list[Message]:
-        result = await self._session.execute(
-            select(MessageModel)
-            .where(MessageModel.conversation_id == conversation_id)
-            .order_by(MessageModel.created_at)
-        )
-        return [to_message(model) for model in result.scalars().all()]

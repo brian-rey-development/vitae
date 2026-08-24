@@ -40,29 +40,43 @@ infra/http  ->  application  ->  domain  <-  infra/persistence
   `docker-compose.yml`, `pyproject.toml`, `.env`, `tests/`. Migrations are operational, so they live
   here, never in `core/`.
 
+## One module, one aggregate, one service
+
+A module owns exactly one aggregate and therefore exactly one service. `users`, `profiles`,
+`conversations`, `messages` are each their own module, even where they are related (a profile belongs
+to a user, a message to a conversation). Related is not the same as coupled: aggregates that can
+evolve on their own axes stay in separate modules from the start, so a change to one never reaches
+into the other.
+
+Because a module has one service, `application/service.py` is singular and never holds two services.
+If you feel the urge to add a second service to a module, that second aggregate wants its own module.
+
 ## Anatomy of a module
 
 ```
 modules/<domain>/
   domain/            # framework-free: stdlib + typing only
-    entities.py      #   frozen dataclasses (the domain model)
+    entities.py      #   frozen dataclass (the aggregate)
     enums.py         #   domain enums
     constants.py     #   domain invariants (length limits, ...)
-    ports.py         #   repository interfaces (typing.Protocol)
+    ports.py         #   the repository interface (typing.Protocol)
   application/
-    services.py      #   the use cases; depends on ports + the UnitOfWork port only
+    service.py       #   the one service; depends on ports + the UnitOfWork port only
   infra/
     http/
       router.py      #   endpoints + composition root (wires adapters into the service)
       schemas.py     #   Pydantic request/response
     persistence/
-      models.py      #   SQLAlchemy ORM models (<Entity>Model)
+      models.py      #   SQLAlchemy ORM model (<Entity>Model)
       repository.py  #   Postgres<Entity>Repository, implements the port
       mappers.py     #   ORM row <-> domain entity
 ```
 
-A module never imports another module's internals. Cross-module references are by foreign key (table
-name) only. Anything shared by two modules lifts into `core/`.
+A module never imports another module's internals - not its models, not its service. Cross-module
+references are by foreign key (table name) only. When one module needs a fact about another (does
+this conversation belong to this user?), it declares its own port for that question and the adapter
+answers it with a parameterized query against the foreign-key-referenced table (see `messages`'
+`ConversationOwnership`). Anything genuinely shared lifts into `core/`.
 
 ## The three representations
 
@@ -93,8 +107,12 @@ session-bound repositories and the UoW into the service; endpoints just call the
   into a concept - split them into files that do.
 - Modules and packages are lowercase; domains are plural (`users`, `conversations`).
 - Domain entity = the singular noun (`Conversation`). ORM model = `<Entity>Model`. Repository
-  implementation = `Postgres<Entity>Repository`. Application service = `<Entity>Service`.
+  implementation = `Postgres<Entity>Repository`. The one application service = `<Entity>Service`.
 - Ports are the plain interface name (`ConversationRepository`), a `typing.Protocol`.
+- Inject a dependency under its **role**, not a domain noun. The repository a service depends on is
+  `repository` / `self._repository`, never `profiles` / `self._profiles` - a plural domain noun reads
+  like a collection and lies about what the field is. Same for other injected ports (`uow`,
+  `conversation_ownership`). The type says which aggregate; the name says what job it does here.
 - API schemas: `<Resource>Create` / `<Resource>Update` (requests), `<Resource>Read` (responses).
   Non-resource responses are named descriptively (`HealthStatus`, `MetaInfo`).
 - Repository methods: `add`, `get`, `list_all`, `upsert`. Never name a method `list` - it shadows the

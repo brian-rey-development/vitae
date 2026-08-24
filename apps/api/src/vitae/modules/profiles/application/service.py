@@ -2,26 +2,18 @@ import uuid
 from datetime import date
 
 from vitae.core.database import UnitOfWork
-from vitae.modules.users.domain.entities import Profile, User
-from vitae.modules.users.domain.enums import Sex
-from vitae.modules.users.domain.ports import ProfileRepository, UserRepository
-
-
-class UserService:
-    def __init__(self, users: UserRepository) -> None:
-        self._users = users
-
-    async def get_user(self, user_id: uuid.UUID) -> User | None:
-        return await self._users.get(user_id)
+from vitae.modules.profiles.domain.entities import Profile
+from vitae.modules.profiles.domain.enums import Sex
+from vitae.modules.profiles.domain.ports import ProfileRepository
 
 
 class ProfileService:
-    def __init__(self, profiles: ProfileRepository, uow: UnitOfWork) -> None:
-        self._profiles = profiles
+    def __init__(self, repository: ProfileRepository, uow: UnitOfWork) -> None:
+        self._repository = repository
         self._uow = uow
 
     async def get_profile(self, user_id: uuid.UUID) -> Profile | None:
-        return await self._profiles.get(user_id)
+        return await self._repository.get(user_id)
 
     async def update_profile(
         self,
@@ -37,6 +29,6 @@ class ProfileService:
             date_of_birth=date_of_birth,
             sex=sex,
         )
-        saved = await self._profiles.upsert(profile)
+        saved = await self._repository.upsert(profile)
         await self._uow.commit()
         return saved

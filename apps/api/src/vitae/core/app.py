@@ -8,8 +8,10 @@ from vitae.core.lifespan import lifespan
 OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and readiness probes."},
     {"name": "meta", "description": "Application metadata."},
-    {"name": "users", "description": "The current user and their profile."},
-    {"name": "conversations", "description": "Conversations and their messages."},
+    {"name": "users", "description": "The current user's account."},
+    {"name": "profiles", "description": "The current user's profile."},
+    {"name": "conversations", "description": "Conversations."},
+    {"name": "messages", "description": "Messages within a conversation."},
 ]
 
 

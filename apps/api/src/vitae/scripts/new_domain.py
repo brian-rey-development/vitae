@@ -53,21 +53,21 @@ from vitae.modules.{domain}.domain.ports import {model}Repository
 
 
 class {model}Service:
-    def __init__(self, {domain}: {model}Repository, uow: UnitOfWork) -> None:
-        self._{domain} = {domain}
+    def __init__(self, repository: {model}Repository, uow: UnitOfWork) -> None:
+        self._repository = repository
         self._uow = uow
 
     async def create(self, name: str) -> {model}:
         {var} = {model}(id=uuid.uuid4(), name=name, created_at=datetime.now(UTC))
-        await self._{domain}.add({var})
+        await self._repository.add({var})
         await self._uow.commit()
         return {var}
 
     async def get(self, {var}_id: uuid.UUID) -> {model} | None:
-        return await self._{domain}.get({var}_id)
+        return await self._repository.get({var}_id)
 
     async def list_{domain}(self) -> list[{model}]:
-        return await self._{domain}.list_all()
+        return await self._repository.list_all()
 """
 
 _MODELS = """from sqlalchemy import String
@@ -153,7 +153,7 @@ from fastapi import APIRouter, Depends
 
 from vitae.core.database import SessionDep, PostgresUnitOfWork
 from vitae.core.errors import NotFoundError
-from vitae.modules.{domain}.application.services import {model}Service
+from vitae.modules.{domain}.application.service import {model}Service
 from vitae.modules.{domain}.infra.http.schemas import {model}Create, {model}Read
 from vitae.modules.{domain}.infra.persistence.repository import Postgres{model}Repository
 
@@ -197,7 +197,7 @@ _FILES = {
     "domain/constants.py": _CONSTANTS,
     "domain/ports.py": _PORTS,
     "application/__init__.py": "",
-    "application/services.py": _SERVICES,
+    "application/service.py": _SERVICES,
     "infra/__init__.py": "",
     "infra/http/__init__.py": "",
     "infra/http/schemas.py": _SCHEMAS,
@@ -213,7 +213,7 @@ _UNIT_TEST = """import uuid
 
 import pytest
 
-from vitae.modules.{domain}.application.services import {model}Service
+from vitae.modules.{domain}.application.service import {model}Service
 from vitae.modules.{domain}.domain.entities import {model}
 
 pytestmark = pytest.mark.unit

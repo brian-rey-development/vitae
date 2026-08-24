@@ -3,11 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from vitae.modules.conversations.domain.constants import (
-    CONVERSATION_TITLE_MAX_LENGTH,
-    MESSAGE_CONTENT_MAX_LENGTH,
-)
-from vitae.modules.conversations.domain.enums import MessageRole
+from vitae.modules.conversations.domain.constants import CONVERSATION_TITLE_MAX_LENGTH
 
 
 class ConversationCreate(BaseModel):
@@ -19,17 +15,4 @@ class ConversationRead(BaseModel):
 
     id: uuid.UUID
     title: str | None
-    created_at: datetime
-
-
-class MessageCreate(BaseModel):
-    content: str = Field(min_length=1, max_length=MESSAGE_CONTENT_MAX_LENGTH)
-
-
-class MessageRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    role: MessageRole
-    content: str
     created_at: datetime
