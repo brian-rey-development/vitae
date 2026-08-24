@@ -1,9 +1,9 @@
 from fastapi import APIRouter, FastAPI
 
-from vitae.health.router import router as health_router
-from vitae.meta.router import router as meta_router
 from vitae.modules.conversations.infra.http.router import router as conversations_router
 from vitae.modules.users.infra.http.router import router as users_router
+from vitae.platform.health import router as health_router
+from vitae.platform.meta import router as meta_router
 
 
 def register_routers(app: FastAPI, api_v1_prefix: str) -> None:

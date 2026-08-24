@@ -33,7 +33,8 @@ infra/http  ->  application  ->  domain  <-  infra/persistence
     surface (`from vitae.core.database import Base, SessionDep`), never a submodule path, so the
     internal file layout stays free to change.
   - **`modules/<domain>/`** is a hexagonal slice (see anatomy below).
-  - **`health/`, `meta/`** are operational endpoints, not domains; they stay flat (a `router.py`).
+  - **`platform/`** holds non-domain endpoints about the running app (`health`, `meta`), each a
+    single-module router. Not domains, so they never take the hexagonal shape.
   - **`scripts/`** holds management commands run with `python -m` (`seed`, `new_domain`).
 - **`apps/api/` root** holds operational artifacts that must NOT ship: `alembic/` + `alembic.ini`,
   `docker-compose.yml`, `pyproject.toml`, `.env`, `tests/`. Migrations are operational, so they live
@@ -157,7 +158,8 @@ tests/
   (`join_transaction_mode="create_savepoint"`), so the app's real commits stay isolated.
 - Add a `test_repository.py` under `integration/<module>/` only when a repository needs coverage the
   API path does not give (for example the atomic upsert).
-- `health` and `meta` are modules like any other: `tests/integration/health/`, `.../meta/`.
+- `platform` endpoints are tested like any other: `tests/integration/platform/test_health.py`,
+  `test_meta.py`, named after the source module.
 
 From M4 on, no feature merges without tests.
 
