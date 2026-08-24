@@ -1,5 +1,5 @@
 from vitae.modules.users.domain.entities import Profile
-from vitae.modules.users.infra.repository.models import ProfileModel
+from vitae.modules.users.infra.persistence.models import ProfileModel
 
 
 def to_profile(model: ProfileModel) -> Profile:

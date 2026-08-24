@@ -7,9 +7,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from vitae.core.config import get_settings
-from vitae.core.db import Base
-from vitae.modules.conversations.infra.repository import models as conversation_models  # noqa: F401
-from vitae.modules.users.infra.repository import models as user_models  # noqa: F401
+from vitae.core.database import Base
+from vitae.modules.conversations.infra.persistence import models as conversation_models  # noqa: F401
+from vitae.modules.users.infra.persistence import models as user_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

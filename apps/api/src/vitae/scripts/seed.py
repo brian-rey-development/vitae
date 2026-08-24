@@ -2,8 +2,8 @@ import asyncio
 
 from vitae.core.auth import DEV_USER_ID
 from vitae.core.config import get_settings
-from vitae.core.db import create_db_engine, create_db_session_maker
-from vitae.modules.users.infra.repository.models import UserModel
+from vitae.core.database import create_db_engine, create_db_session_maker
+from vitae.modules.users.infra.persistence.models import UserModel
 
 
 async def seed_dev_user() -> None:

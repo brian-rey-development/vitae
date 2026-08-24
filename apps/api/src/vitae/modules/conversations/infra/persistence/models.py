@@ -4,7 +4,7 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vitae.core.db import Base, CreatedAtMixin, TimestampMixin, UUIDPrimaryKey
+from vitae.core.database import Base, CreatedAtMixin, TimestampMixin, UUIDPrimaryKey
 from vitae.modules.conversations.domain.constants import CONVERSATION_TITLE_MAX_LENGTH
 from vitae.modules.conversations.domain.enums import MessageRole
 

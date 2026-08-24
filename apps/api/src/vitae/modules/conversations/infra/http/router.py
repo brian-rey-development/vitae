@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from vitae.core.auth import CurrentUserId
-from vitae.core.db import SessionDep, SqlUnitOfWork
+from vitae.core.database import SessionDep, SqlUnitOfWork
 from vitae.core.errors import NotFoundError
 from vitae.modules.conversations.application.services import ConversationService
 from vitae.modules.conversations.domain.entities import Conversation
@@ -15,7 +15,7 @@ from vitae.modules.conversations.infra.http.schemas import (
     MessageCreate,
     MessageRead,
 )
-from vitae.modules.conversations.infra.repository.repository import (
+from vitae.modules.conversations.infra.persistence.repository import (
     SqlConversationRepository,
     SqlMessageRepository,
 )

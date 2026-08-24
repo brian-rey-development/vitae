@@ -5,7 +5,7 @@ from sqlalchemy import Date, ForeignKey, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vitae.core.db import Base, TimestampMixin, UUIDPrimaryKey
+from vitae.core.database import Base, TimestampMixin, UUIDPrimaryKey
 from vitae.modules.users.domain.constants import DISPLAY_NAME_MAX_LENGTH
 from vitae.modules.users.domain.enums import Sex
 

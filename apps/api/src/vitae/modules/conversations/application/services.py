@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from vitae.core.unit_of_work import UnitOfWork
+from vitae.core.database import UnitOfWork
 from vitae.modules.conversations.domain.entities import Conversation, Message
 from vitae.modules.conversations.domain.enums import MessageRole
 from vitae.modules.conversations.domain.ports import ConversationRepository, MessageRepository

@@ -18,7 +18,7 @@ inward: `infra -> application -> domain`, and `infra` also implements the ports 
 The domain knows nothing about FastAPI, SQLAlchemy, or Pydantic, so it is testable with zero infra.
 
 ```
-infra/http  ->  application  ->  domain  <-  infra/repository
+infra/http  ->  application  ->  domain  <-  infra/persistence
  (router,        (service,        (entities,    (ORM models,
   schemas)        use cases)       ports)        adapters, mappers)
 ```
@@ -26,9 +26,12 @@ infra/http  ->  application  ->  domain  <-  infra/repository
 ## Where code lives
 
 - **`src/vitae/`** is the importable application package (ships in the wheel).
-  - **`core/`** is cross-cutting framework glue: `config` (all env vars), `db` (engine, session,
-    `Base`, mixins, `SqlUnitOfWork`), `unit_of_work` (the `UnitOfWork` port), `errors`, `auth`, the
-    app factory, `lifespan`, `api`. `core/` never imports a module.
+  - **`core/`** is cross-cutting framework glue: `config` (all env vars), `database/` (the
+    persistence package: `orm` = `Base` + column mixins, `engine`, `session` + `SessionDep`,
+    `unit_of_work` = the `UnitOfWork` port and its `SqlUnitOfWork` adapter), `errors`, `auth`, the app
+    factory (`app`), `lifespan`. `core/` never imports a module. Import persistence from the package
+    surface (`from vitae.core.database import Base, SessionDep`), never a submodule path, so the
+    internal file layout stays free to change.
   - **`modules/<domain>/`** is a hexagonal slice (see anatomy below).
   - **`health/`, `meta/`** are operational endpoints, not domains; they stay flat (a `router.py`).
   - **`scripts/`** holds management commands run with `python -m` (`seed`, `new_domain`).
@@ -51,7 +54,7 @@ modules/<domain>/
     http/
       router.py      #   endpoints + composition root (wires adapters into the service)
       schemas.py     #   Pydantic request/response
-    repository/
+    persistence/
       models.py      #   SQLAlchemy ORM models (<Entity>Model)
       repository.py  #   Sql<Entity>Repository, implements the port
       mappers.py     #   ORM row <-> domain entity
@@ -67,7 +70,7 @@ The same concept appears in three shapes, and they stay separate:
 - **Domain entity** (`Conversation`) - a frozen dataclass, the currency of the domain and
   application layers. It owns identity and time: the service generates the `id` (`uuid4`) and
   `created_at` (`datetime.now(UTC)`), so the database is storage, not the source of truth for those.
-- **ORM model** (`ConversationModel`) - SQLAlchemy, storage only, in `infra/repository`.
+- **ORM model** (`ConversationModel`) - SQLAlchemy, storage only, in `infra/persistence`.
 - **API schema** (`ConversationCreate` / `ConversationRead`) - Pydantic, the wire contract, in
   `infra/http`. A response never exposes an internal field (`user_id`) unless intended.
 
@@ -77,11 +80,16 @@ Mappers translate ORM <-> entity; the router maps entity -> schema with `model_v
 
 The transaction boundary is an application concern. The service depends on the `UnitOfWork` port and
 calls `await uow.commit()` after a mutation; it never imports `AsyncSession`. The SQLAlchemy
-`SqlUnitOfWork` (in `core/db.py`) is the adapter. The router's composition root wires the
+`SqlUnitOfWork` (in `core/database/unit_of_work.py`) is the adapter. The router's composition root wires the
 session-bound repositories and the UoW into the service; endpoints just call the service.
 
 ## Naming
 
+- A filename names the **responsibility** it holds, never a framework mechanic or a catch-all.
+  Banned: `base.py`, `utils.py`, `helpers.py`, `common.py`, `misc.py`, and `types.py` as a junk
+  drawer. The ORM foundation is `orm.py` (not `base.py`), even though the class inside stays `Base`
+  (the SQLAlchemy idiom). If a file would need one of the banned names, its contents don't yet cohere
+  into a concept - split them into files that do.
 - Modules and packages are lowercase; domains are plural (`users`, `conversations`).
 - Domain entity = the singular noun (`Conversation`). ORM model = `<Entity>Model`. Repository
   implementation = `Sql<Entity>Repository`. Application service = `<Entity>Service`.

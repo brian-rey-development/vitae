@@ -5,8 +5,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vitae.modules.users.domain.entities import Profile
-from vitae.modules.users.infra.repository.mappers import to_profile
-from vitae.modules.users.infra.repository.models import ProfileModel
+from vitae.modules.users.infra.persistence.mappers import to_profile
+from vitae.modules.users.infra.persistence.models import ProfileModel
 
 
 class SqlProfileRepository:

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from vitae.core.db import create_db_engine, create_db_session_maker
+from vitae.core.database import create_db_engine, create_db_session_maker
 
 logger = logging.getLogger("vitae")
 
