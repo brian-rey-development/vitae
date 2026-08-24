@@ -2,9 +2,17 @@ import uuid
 from datetime import date
 
 from vitae.core.database import UnitOfWork
-from vitae.modules.users.domain.entities import Profile
+from vitae.modules.users.domain.entities import Profile, User
 from vitae.modules.users.domain.enums import Sex
-from vitae.modules.users.domain.ports import ProfileRepository
+from vitae.modules.users.domain.ports import ProfileRepository, UserRepository
+
+
+class UserService:
+    def __init__(self, users: UserRepository) -> None:
+        self._users = users
+
+    async def get_user(self, user_id: uuid.UUID) -> User | None:
+        return await self._users.get(user_id)
 
 
 class ProfileService:

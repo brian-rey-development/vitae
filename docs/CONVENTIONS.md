@@ -28,7 +28,7 @@ infra/http  ->  application  ->  domain  <-  infra/persistence
 - **`src/vitae/`** is the importable application package (ships in the wheel).
   - **`core/`** is cross-cutting framework glue: `config` (all env vars), `database/` (the
     persistence package: `orm` = `Base` + column mixins, `engine`, `session` + `SessionDep`,
-    `unit_of_work` = the `UnitOfWork` port and its `SqlUnitOfWork` adapter), `errors`, `auth`, the app
+    `unit_of_work` = the `UnitOfWork` port and its `PostgresUnitOfWork` adapter), `errors`, `auth`, the app
     factory (`app`), `lifespan`. `core/` never imports a module. Import persistence from the package
     surface (`from vitae.core.database import Base, SessionDep`), never a submodule path, so the
     internal file layout stays free to change.
@@ -56,7 +56,7 @@ modules/<domain>/
       schemas.py     #   Pydantic request/response
     persistence/
       models.py      #   SQLAlchemy ORM models (<Entity>Model)
-      repository.py  #   Sql<Entity>Repository, implements the port
+      repository.py  #   Postgres<Entity>Repository, implements the port
       mappers.py     #   ORM row <-> domain entity
 ```
 
@@ -80,7 +80,7 @@ Mappers translate ORM <-> entity; the router maps entity -> schema with `model_v
 
 The transaction boundary is an application concern. The service depends on the `UnitOfWork` port and
 calls `await uow.commit()` after a mutation; it never imports `AsyncSession`. The SQLAlchemy
-`SqlUnitOfWork` (in `core/database/unit_of_work.py`) is the adapter. The router's composition root wires the
+`PostgresUnitOfWork` (in `core/database/unit_of_work.py`) is the adapter. The router's composition root wires the
 session-bound repositories and the UoW into the service; endpoints just call the service.
 
 ## Naming
@@ -92,7 +92,7 @@ session-bound repositories and the UoW into the service; endpoints just call the
   into a concept - split them into files that do.
 - Modules and packages are lowercase; domains are plural (`users`, `conversations`).
 - Domain entity = the singular noun (`Conversation`). ORM model = `<Entity>Model`. Repository
-  implementation = `Sql<Entity>Repository`. Application service = `<Entity>Service`.
+  implementation = `Postgres<Entity>Repository`. Application service = `<Entity>Service`.
 - Ports are the plain interface name (`ConversationRepository`), a `typing.Protocol`.
 - API schemas: `<Resource>Create` / `<Resource>Update` (requests), `<Resource>Read` (responses).
   Non-resource responses are named descriptively (`HealthStatus`, `MetaInfo`).

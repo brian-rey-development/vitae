@@ -13,7 +13,7 @@ from vitae.modules.conversations.infra.persistence.mappers import (
 from vitae.modules.conversations.infra.persistence.models import ConversationModel, MessageModel
 
 
-class SqlConversationRepository:
+class PostgresConversationRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
@@ -36,7 +36,7 @@ class SqlConversationRepository:
         return [to_conversation(model) for model in result.scalars().all()]
 
 
-class SqlMessageRepository:
+class PostgresMessageRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

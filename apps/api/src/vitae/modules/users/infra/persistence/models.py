@@ -6,12 +6,14 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from vitae.core.database import Base, TimestampMixin, UUIDPrimaryKey
-from vitae.modules.users.domain.constants import DISPLAY_NAME_MAX_LENGTH
+from vitae.modules.users.domain.constants import DISPLAY_NAME_MAX_LENGTH, EMAIL_MAX_LENGTH
 from vitae.modules.users.domain.enums import Sex
 
 
 class UserModel(UUIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "users"
+
+    email: Mapped[str] = mapped_column(String(EMAIL_MAX_LENGTH), unique=True, index=True)
 
     profile: Mapped["ProfileModel | None"] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"

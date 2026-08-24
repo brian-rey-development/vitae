@@ -4,12 +4,23 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from vitae.modules.users.domain.entities import Profile
-from vitae.modules.users.infra.persistence.mappers import to_profile
-from vitae.modules.users.infra.persistence.models import ProfileModel
+from vitae.modules.users.domain.entities import Profile, User
+from vitae.modules.users.infra.persistence.mappers import to_profile, to_user
+from vitae.modules.users.infra.persistence.models import ProfileModel, UserModel
 
 
-class SqlProfileRepository:
+class PostgresUserRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get(self, user_id: uuid.UUID) -> User | None:
+        model = await self._session.get(UserModel, user_id)
+        if model is None:
+            return None
+        return to_user(model)
+
+
+class PostgresProfileRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

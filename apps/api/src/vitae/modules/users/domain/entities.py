@@ -1,8 +1,15 @@
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 from vitae.modules.users.domain.enums import Sex
+
+
+@dataclass(frozen=True)
+class User:
+    id: uuid.UUID
+    email: str
+    created_at: datetime
 
 
 @dataclass(frozen=True)

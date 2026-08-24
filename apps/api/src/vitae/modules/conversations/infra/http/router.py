@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from vitae.core.auth import CurrentUserId
-from vitae.core.database import SessionDep, SqlUnitOfWork
+from vitae.core.database import PostgresUnitOfWork, SessionDep
 from vitae.core.errors import NotFoundError
 from vitae.modules.conversations.application.services import ConversationService
 from vitae.modules.conversations.domain.entities import Conversation
@@ -16,8 +16,8 @@ from vitae.modules.conversations.infra.http.schemas import (
     MessageRead,
 )
 from vitae.modules.conversations.infra.persistence.repository import (
-    SqlConversationRepository,
-    SqlMessageRepository,
+    PostgresConversationRepository,
+    PostgresMessageRepository,
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -25,9 +25,9 @@ router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 def get_conversation_service(session: SessionDep) -> ConversationService:
     return ConversationService(
-        SqlConversationRepository(session),
-        SqlMessageRepository(session),
-        SqlUnitOfWork(session),
+        PostgresConversationRepository(session),
+        PostgresMessageRepository(session),
+        PostgresUnitOfWork(session),
     )
 
 
